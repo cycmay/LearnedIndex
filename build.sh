@@ -6,4 +6,6 @@ cd build
 cmake ..
 make
 
-cd ..
+cd ../
+cd bin
+./LearnedIndex

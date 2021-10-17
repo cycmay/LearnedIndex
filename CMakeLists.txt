@@ -13,17 +13,22 @@ enable_testing()
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/src SRCS)
 
+find_package(PythonLibs 3.6)
+include_directories(/usr/local/lib64/python3.6/site-packages/numpy/core/include)
 
 add_executable(LearnedIndex 
     ${SRCS}
     )
 
 
-
-
 target_include_directories(LearnedIndex
     PRIVATE
+    ${PYTHON_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}/include
+)
+
+target_link_libraries(LearnedIndex
+    ${PYTHON_LIBRARIES}
 )
 
 
