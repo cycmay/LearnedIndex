@@ -10,7 +10,7 @@ namespace LIndex{
 
 
 template <class ket_t>
-LModel<ket_t>::LModel(LModel &a)
+LModel<ket_t>::LModel(const LModel<ket_t> &a)
 {
     for(size_t i=0;i<a.weights.size();i++){
         this->weights[i] = a.weights[i];

@@ -1,26 +1,20 @@
 #pragma once
 #include <vector>
 #include "LIndex/LIndex_model.h"
+#include "LIndex/binseca.h"
 
 namespace LIndex{
     template<class key_t>
     class LModelSet{
         public:
-
         typedef typename std::vector<key_t>::iterator vector_iterator_t;
         typedef typename std::vector<key_t>::const_iterator vector_const_iterator_t; 
-
-        const double MAX_ERROR = 10000.0;
-        std::vector<LModel<key_t> *> model_set;
-
+        Binseca<LModel<key_t> > model_set;
+        
+        public:
         LModelSet(){};
         ~LModelSet(){
-            if(this->model_set.size()>0){
-                for(size_t i=0;i<this->model_set.size();i++){
-                    delete model_set[i];
-                }
-                this->model_set.clear();
-            }
+            this->model_set.clear();
         };
 
         private:
@@ -38,7 +32,27 @@ namespace LIndex{
                                     std::vector<uint64_t>::const_iterator pos_begin,
                                     std::vector<uint64_t>::const_iterator pos_end,
                                     double max_error){
-            if(keys_end-keys_begin<=2){
+            if(keys_end-keys_begin==0){
+                return;
+            }
+            if(keys_end-keys_begin==1){
+                LModel<key_t> *m = new LModel<key_t>();
+                m->weights[0]=1.0;
+                m->weights[1]=(double)*pos_begin;
+                m->min_key = *keys_begin;
+                m->max_key = *keys_begin;
+                m->loss = 0.0;
+                this->model_set.binsert_left(m);
+                return;
+            }
+            if(keys_end-keys_begin==2){
+                LModel<key_t> *m = new LModel<key_t>();
+                m->weights[0]=(*(pos_end-1)-*(pos_begin))/((*keys_end).data-(*keys_begin).data);
+                m->weights[1]=(*pos_begin)-m->weights[0]*((*keys_begin).data);
+                m->min_key = *keys_begin;
+                m->max_key = *(keys_end-1);
+                m->loss = 0.0;
+                this->model_set.binsert_left(m);
                 return;
             }
             double best_so_far = 0;
@@ -79,9 +93,9 @@ namespace LIndex{
                                         pos_end,
                                         max_error);
             }else{
-                LModel<key_t> * m = new LModel<key_t>();
+                LModel<key_t> *m = new LModel<key_t>();
                 m->training(keys_begin, keys_end, pos_begin, pos_end);
-                model_set.push_back(m);
+                model_set.binsert_left(m);
             }
         }
     

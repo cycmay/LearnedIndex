@@ -12,10 +12,24 @@ private:
     
 public:
     LModel(){};
-    LModel(LModel &a);
+    LModel(const LModel<key_t> &a);
     ~LModel();
     typedef typename std::vector<key_t>::iterator vector_iterator_t;
     typedef typename std::vector<key_t>::const_iterator vector_const_iterator_t; 
+
+    friend bool operator<(const LModel<key_t> &a, const LModel<key_t> &b){
+        return a.min_key.data<b.min_key.data;
+    }
+    friend bool operator>(const LModel<key_t> &a, const LModel<key_t> &b){
+        return a.min_key.data>b.min_key.data;
+    }
+    friend bool operator<=(const LModel<key_t> &a, const LModel<key_t> &b){
+        return a.min_key.data<=b.min_key.data;
+    }
+    friend bool operator>=(const LModel<key_t> &a, const LModel<key_t> &b){
+        return a.min_key.data>=b.min_key.data;
+    }
+
     // train parameters using data set
     void training(std::vector<key_t> &keys, std::vector<uint64_t> &positions);
     void training(vector_const_iterator_t k_begin, 
