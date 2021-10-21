@@ -6,6 +6,7 @@
 #include <sstream>
 #include "LIndex/LIndex_model.h"
 #include "LIndex/LIndex_model_set.h"
+#include "LIndex/Lindex.h"
 #include "LIndex_model_impl.h"
 
 #include "LIndex/matplotlibcpp.h"
@@ -104,48 +105,22 @@ int main(int, char**) {
         }
 		 
 	}
-    LIndex::LModelSet<key_t> test;
+    LIndex::LIndex<key_t> lindex;
 
     // show pillow
     std::vector<uint64_t> x(keys.size());
     std::vector<uint64_t> y(positions.size());
-    for(size_t i=0;i<keys.size();i++){
-        x.at(i)=keys[i].data;
-        y.at(i)=positions[i];
-    }
-
-    namespace plt=matplotlibcpp;
-    plt::plot(x,y);
-    // Enable legend.
-    plt::legend();
-   
-    test.split_model(keys, positions, 1000.0);
-
-    for(auto it=test.model_set.cbegin(); it!=test.model_set.cend(); it++){
-        printf("min_key: %ld, max_key %ld\n", (*it)->min_key.data, (*it)->max_key.data);
-        printf("weight: [%.3f, %.3f]\n", (*it)->weights[0], (*it)->weights[1]);
-        printf("loss: %.3f\n", (*it)->loss);
-
-        std::vector<uint64_t> x;
-        std::vector<uint64_t> y;
-        for(auto i=(*it)->min_key.data;i<(*it)->max_key.data;i++){
-            x.push_back(i);
-            y.push_back((*it)->predict(i));
-        }
-        plt::plot(x,y);
-        // std::uniform_int_distribution<int64_t> rand_keynumber(0, Keys_number);
-        // for(size_t i=0;i<5;i++){
-        //     uint64_t pos = rand_keynumber(gen);
-        //     printf("Key [%ld] predict-postion:[%ld] real-positon [%ld]\n", keys[pos].data, test.predict(keys[pos]), (uint64_t)pos);
-        // }
-    }
-
-     // save figure
-    const char* filename = "./basic.png";
-    std::cout << "Saving result to " << filename << std::endl;;
-    plt::save(filename);
-
     
+
+
+    lindex.init(keys, positions);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int64_t> rand_keynumber(0, Keys_number);
+    for(size_t i=0;i<5;i++){
+        uint64_t p = rand_keynumber(gen);
+        printf("Key [%ld] predict-postion:[%ld] real-positon [%ld]\n", keys[p].data, lindex.get(keys[p]), (uint64_t)positions[p]);
+    }
 
     
 }

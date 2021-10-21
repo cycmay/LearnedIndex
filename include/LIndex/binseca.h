@@ -6,14 +6,16 @@ namespace LIndex{
 
         public:
         Binseca(){};
-        ~Binseca(){};
+        ~Binseca(){
+            this->clear();
+        };
 
         private:
-        std::vector<T *> arr;
-        typedef typename std::vector<T*>::const_iterator arr_cit_t;
+        std::vector<T> arr;
+        typedef typename std::vector<T>::const_iterator arr_cit_t;
 
         public:
-        uint64_t bsearch_left(const T &e){
+        T bsearch_left(const T &e){
             uint64_t low=0, high=this->arr.size();
             while(low<high){
                 uint64_t mid = (high-low)/2+low;
@@ -24,27 +26,24 @@ namespace LIndex{
                 }
 
             }
-            return low;
+            return this->arr[low];
         }
-        void binsert_left(T * e_p){
-            this->arr.push_back(e_p);
+        void binsert_left(const T e){
+            this->arr.emplace_back(e);
             size_t i=this->arr.size()-1;
             while(i>0){
-                if(*this->arr[i-1]>=*e_p){
+                if(this->arr[i-1]>=e){
                     this->arr[i]=this->arr[i-1];
                 }else{
                     break;
                 }
                 i--;
             }
-            this->arr[i]=e_p;
+            this->arr[i]=e;
             return;
         }
         
         void clear(){
-            for(auto it=this->arr.cbegin();it!=this->arr.cend();it++){
-                delete *it;
-            }
             this->arr.clear();
         }
 
