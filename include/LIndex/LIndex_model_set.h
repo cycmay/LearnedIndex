@@ -32,7 +32,7 @@ namespace LIndex{
         }
 
         private:
-        double error = 0.10;
+        double error = 1000.0;
         double improvement_spliting_here(uint64_t keys_begin, 
                                         uint64_t keys_end,
                                         uint64_t pos_begin,
@@ -40,14 +40,14 @@ namespace LIndex{
                                         uint64_t point,
                                         uint64_t point_p){
             // L = abs((y1-y2)x3+(x2-x1)y3+x1y2-y1x2)/sqrt((y1-y2) ^ 2 +(x1-x2) ^ 2)
-            uint64_t x1=this->keys[keys_begin].data;
-            uint64_t x2=this->keys[keys_end].data;
-            uint64_t y1=this->positions[pos_begin];
-            uint64_t y2=this->positions[pos_end];
-            uint64_t x3 = this->keys[point].data;
-            uint64_t y3 = this->positions[point_p];
+            double x1=this->keys[keys_begin].data;
+            double x2=this->keys[keys_end].data;
+            double y1=this->positions[pos_begin];
+            double y2=this->positions[pos_end];
+            double x3 = this->keys[point].data;
+            double y3 = this->positions[point_p];
 
-            return (fabs((y2 - y1) * x3 +(x1 - x2) * y3 + ((x2 * y1) -(x1 * y2)))) / (sqrt(pow(y2 - y1, 2) + pow(x1 - x2, 2)));
+            return (fabs((y2 - y1) * x3 +(x1 - x2) * y3 + ((x2 * y1) -(x1 * y2)))) / (sqrt(pow(y2 - y1, 2.0) + pow(x1 - x2, 2.0)));
         }
 
         void top_down_split_models(uint64_t keys_begin, 
@@ -61,7 +61,7 @@ namespace LIndex{
             if(keys_end-keys_begin==0){
                 LModel<key_t> m;
                 m.weights[0]=1.0;
-                m.weights[1]=(double)pos_begin;
+                m.weights[1]=(double)this->positions[pos_begin];
                 m.min_key = this->keys[keys_begin];
                 m.max_key = this->keys[keys_begin];
                 m.loss = 0.0;
@@ -70,15 +70,15 @@ namespace LIndex{
             }
             if(keys_end-keys_begin==1){
                 LModel<key_t> m;
-                m.weights[0]=(pos_end-pos_begin)/(this->keys[keys_end].data-this->keys[keys_begin].data);
-                m.weights[1]=pos_begin-m.weights[0]*(this->keys[keys_begin].data);
+                m.weights[0]=(this->positions[pos_end]-this->positions[pos_begin])/(this->keys[keys_end].data-this->keys[keys_begin].data);
+                m.weights[1]=this->positions[pos_begin]-m.weights[0]*(this->keys[keys_begin].data);
                 m.min_key = this->keys[keys_begin];
                 m.max_key = this->keys[keys_end];
                 m.loss = 0.0;
                 this->model_set.binsert_left(m);
                 return;
             }
-            double best_so_far = 0;
+            double best_so_far = 0.0;
             uint64_t break_point = keys_begin, break_point_p = pos_begin;
 
             double improvement_in_approximation = 0.0;
@@ -119,7 +119,7 @@ namespace LIndex{
                             keys_end, 
                             pos_begin, 
                             pos_end);
-                model_set.binsert_left(m);
+                this->model_set.binsert_left(m);
             }
         }
     

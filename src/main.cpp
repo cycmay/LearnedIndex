@@ -13,9 +13,9 @@
 
 class Key{
     public:
-    int64_t data;
+    uint64_t data;
     Key(){};
-    Key(int64_t d):data(d){};
+    Key(uint64_t d):data(d){};
     Key & operator=(const Key &a){
         this->data=a.data;
         return *this;
@@ -54,17 +54,37 @@ void test_linear_model(){
     }
 
     std::sort(keys.begin(), keys.end());
-   
-    test.training(keys, positions);
 
+    // show pillow
+    std::vector<uint64_t> x(keys.size());
+    std::vector<uint64_t> y(positions.size());
+    for(size_t i=0;i<keys.size();i++){
+        x.at(i)=keys[i].data;
+        y.at(i)=positions[i];
+    }
+    namespace plt=matplotlibcpp;
+    plt::plot(x,y);
+    // Enable legend.
+    plt::legend();
+    test.training(keys, positions);
+    printf("min_key: %ld, max_key %ld\n", test.min_key.data, test.max_key.data);
     printf("weight: [%.3f, %.3f]\n", test.weights[0], test.weights[1]);
     printf("loss: %.3f\n", test.loss);
 
-    std::uniform_int_distribution<int64_t> rand_keynumber(0, Keys_number);
-    for(size_t i=0;i<5;i++){
-        uint64_t pos = rand_keynumber(gen);
-        printf("Key [%ld] predict-postion:[%ld] real-positon [%ld]\n", keys[pos].data, test.predict(keys[pos]), (uint64_t)pos);
+    for(auto i=test.min_key.data;i<test.max_key.data;i++){
+        x.push_back(i);
+        y.push_back(test.predict(i));
     }
+    plt::plot(x,y);
+   
+        // save figure
+    const char* filename = "./basic_lmodel.png";
+    std::cout << "Saving result to " << filename << std::endl;;
+    plt::save(filename);
+   
+    
+
+   
 }
 
 
@@ -77,7 +97,7 @@ std::string trim(std::string& str)
 	return str;
 }
 
-int main(int, char**) {
+void test_lindex(){
     std::vector<Key> keys;
     std::vector<uint64_t> positions(keys.size());
     std::vector<uint64_t> values(keys.size());
@@ -110,8 +130,6 @@ int main(int, char**) {
     // show pillow
     std::vector<uint64_t> x(keys.size());
     std::vector<uint64_t> y(positions.size());
-    
-
 
     lindex.init(keys, positions);
     std::random_device rd;
@@ -121,6 +139,22 @@ int main(int, char**) {
         uint64_t p = rand_keynumber(gen);
         printf("Key [%ld] predict-postion:[%ld] real-positon [%ld]\n", keys[p].data, lindex.get(keys[p]), (uint64_t)positions[p]);
     }
+}
 
-    
+int main(int, char**) {
+    // uint64_t x1=25937;
+    // uint64_t x2=43812;
+    // uint64_t y1=43179;
+    // uint64_t y2=9838;
+    // uint64_t x3=25938;
+    // uint64_t y3=43117;
+    // double tmp1 = ((y2 - y1) * x3 +(x1 - x2) * y3 + ((x2 * y1) -(x1 * y2))) ;
+    // uint64_t t1=pow((double)y2 - (double)y1, 2);
+    // double tmp2 = (sqrt(pow(y2 - y1, 2) + pow(x1 - x2, 2)));
+    // double res = tmp1/tmp2 ;
+    // std::cout<<res<<std::endl;
+
+    test_linear_model();
+    test_lindex();
+    return 0;
 }
