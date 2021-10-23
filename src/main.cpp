@@ -11,6 +11,16 @@
 
 #include "LIndex/matplotlibcpp.h"
 
+//删除字符串中空格，制表符tab等无效字符
+std::string trim(std::string& str)
+{
+	//str.find_first_not_of(" \t\r\n"),在字符串str中从索引0开始，返回首次不匹配"\t\r\n"的位置
+	str.erase(0,str.find_first_not_of(" \t\r\n"));
+	str.erase(str.find_last_not_of(" \t\r\n") + 1);
+	return str;
+}
+
+
 class Key{
     public:
     uint64_t data;
@@ -32,6 +42,29 @@ size_t Keys_number = 1000;
 
 
 void test_linear_model(){
+    // std::vector<Key> keys;
+    // std::vector<uint64_t> positions(keys.size());
+    // std::vector<uint64_t> values(keys.size());
+
+    // typedef Key key_t;
+    // LIndex::LModel<key_t> test;
+
+    // std::random_device rd;
+    // std::mt19937 gen(rd());
+    // std::uniform_int_distribution<int64_t> rand_int64(
+    //     0, Keys_number*2.7);
+
+    // keys.reserve(Keys_number);
+    
+
+    // for (size_t i = 0; i < Keys_number; ++i) {
+    //     keys.push_back(Key(rand_int64(gen)));
+    //     positions.push_back((uint64_t)i);
+    //     values.push_back(1);
+    // }
+
+    // std::sort(keys.begin(), keys.end());
+
     std::vector<Key> keys;
     std::vector<uint64_t> positions(keys.size());
     std::vector<uint64_t> values(keys.size());
@@ -39,28 +72,34 @@ void test_linear_model(){
     typedef Key key_t;
     LIndex::LModel<key_t> test;
 
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<int64_t> rand_int64(
-        0, Keys_number*2.7);
-
-    keys.reserve(Keys_number);
+    std::ifstream fin("/home/bicycle/dev/LearnIndex/src/data/DEXSZUS.csv");
+	std::string line; 
     
-
-    for (size_t i = 0; i < Keys_number; ++i) {
-        keys.push_back(Key(rand_int64(gen)));
-        positions.push_back((uint64_t)i);
-        values.push_back(1);
+	for (size_t a=0;a<=500;a++){
+        getline(fin, line);
+		std::istringstream sin(line);
+		std::vector<std::string> fields;
+		std::string field;
+		while (getline(sin, field, ','))
+		{
+			fields.push_back(field);
+		}
+        uint64_t _key = atoi(trim(fields[0]).c_str());
+        uint64_t _pos = atof(trim(fields[1]).c_str())*10000;
+        if(!_key||!_pos){
+            continue;
+        }else{
+            keys.push_back(Key(_key));
+		    positions.push_back(_pos);
+        }
     }
-
-    std::sort(keys.begin(), keys.end());
 
     // show pillow
     std::vector<uint64_t> x(keys.size());
     std::vector<uint64_t> y(positions.size());
     for(size_t i=0;i<keys.size();i++){
-        x.at(i)=keys[i].data;
-        y.at(i)=positions[i];
+        x[i]=keys[i].data;
+        y[i]=positions[i];
     }
     namespace plt=matplotlibcpp;
     plt::plot(x,y);
@@ -70,7 +109,8 @@ void test_linear_model(){
     printf("min_key: %ld, max_key %ld\n", test.min_key.data, test.max_key.data);
     printf("weight: [%.3f, %.3f]\n", test.weights[0], test.weights[1]);
     printf("loss: %.3f\n", test.loss);
-
+    x.clear();
+    y.clear();
     for(auto i=test.min_key.data;i<test.max_key.data;i++){
         x.push_back(i);
         y.push_back(test.predict(i));
@@ -88,14 +128,6 @@ void test_linear_model(){
 }
 
 
-//删除字符串中空格，制表符tab等无效字符
-std::string trim(std::string& str)
-{
-	//str.find_first_not_of(" \t\r\n"),在字符串str中从索引0开始，返回首次不匹配"\t\r\n"的位置
-	str.erase(0,str.find_first_not_of(" \t\r\n"));
-	str.erase(str.find_last_not_of(" \t\r\n") + 1);
-	return str;
-}
 
 void test_lindex(){
     std::vector<Key> keys;
@@ -134,10 +166,10 @@ void test_lindex(){
     lindex.init(keys, positions);
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<int64_t> rand_keynumber(0, Keys_number);
-    for(size_t i=0;i<5;i++){
+    std::uniform_int_distribution<uint64_t> rand_keynumber(0, keys.size());
+    for(size_t i=0;i<10;i++){
         uint64_t p = rand_keynumber(gen);
-        printf("Key [%ld] predict-postion:[%ld] real-positon [%ld]\n", keys[p].data, lindex.get(keys[p]), (uint64_t)positions[p]);
+        printf("Key [%ld] predict-position:[%ld] real-posiiton [%ld]\n", keys[p].data, lindex.get(keys[p]), (uint64_t)positions[p]);
     }
 }
 
@@ -154,7 +186,7 @@ int main(int, char**) {
     // double res = tmp1/tmp2 ;
     // std::cout<<res<<std::endl;
 
-    test_linear_model();
+    // test_linear_model();
     test_lindex();
     return 0;
 }

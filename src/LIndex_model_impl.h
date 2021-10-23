@@ -45,20 +45,22 @@ void LModel<key_t>::training(
     if(k_end-k_begin<1){
         this->min_key = keys[k_begin];
         this->max_key = keys[k_end];
+        this->weights[0]=1.0;
+        this->weights[1]=(double)positions[p_begin]-(double)keys[k_begin].data;
         this->loss=0.0;
         return;
     }
     
-    uint64_t t1=0, t2=0, t3=0, t4=0;
+    double t1=0, t2=0, t3=0, t4=0;
     for(auto i=k_begin, j=p_begin; i<=k_end&&j<=p_end; i++,j++){
-        uint64_t _key=keys[i].data;
+        double _key = keys[i].data;
         t1 += _key*_key;
         t2 += _key;
-        t3 += _key*positions[j];
+        t3 += _key*(positions[j]);
         t4 += positions[j];
     }
-    this->weights[0] = (double)(t3*(keys[k_end].data-keys[k_begin].data) - t2*t4) / (double)(t1*(keys[k_end].data-keys[k_begin].data) - t2*t2); 
-    this->weights[1] = (double)(t1*t4 - t2*t3) / (double)(t1*(keys[k_end].data-keys[k_begin].data) - t2*t2);
+    this->weights[0] = (t3*(uint64_t)(k_end-k_begin+1) - t2*t4) / (t1*(uint64_t)(k_end-k_begin+1) - t2*t2); 
+    this->weights[1] = (t1*t4 - t2*t3) / (t1*(uint64_t)(k_end-k_begin+1) - t2*t2);
 
     // calculate loss
     loss = 0.0;

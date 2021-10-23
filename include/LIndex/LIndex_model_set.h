@@ -32,7 +32,7 @@ namespace LIndex{
         }
 
         private:
-        double error = 1000.0;
+        double error = 50.0;
         double improvement_spliting_here(uint64_t keys_begin, 
                                         uint64_t keys_end,
                                         uint64_t pos_begin,
@@ -55,26 +55,14 @@ namespace LIndex{
                                     uint64_t pos_begin,
                                     uint64_t pos_end,
                                     double max_error){
-            if(keys_end-keys_begin<0){
-                return;
-            }
-            if(keys_end-keys_begin==0){
+            
+            if(keys_end-keys_begin<=1){
                 LModel<key_t> m;
-                m.weights[0]=1.0;
-                m.weights[1]=(double)this->positions[pos_begin];
-                m.min_key = this->keys[keys_begin];
-                m.max_key = this->keys[keys_begin];
-                m.loss = 0.0;
-                this->model_set.binsert_left(m);
-                return;
-            }
-            if(keys_end-keys_begin==1){
-                LModel<key_t> m;
-                m.weights[0]=(this->positions[pos_end]-this->positions[pos_begin])/(this->keys[keys_end].data-this->keys[keys_begin].data);
-                m.weights[1]=this->positions[pos_begin]-m.weights[0]*(this->keys[keys_begin].data);
-                m.min_key = this->keys[keys_begin];
-                m.max_key = this->keys[keys_end];
-                m.loss = 0.0;
+                m.training(this->keys, this->positions, 
+                            keys_begin, 
+                            keys_end, 
+                            pos_begin, 
+                            pos_end);
                 this->model_set.binsert_left(m);
                 return;
             }
