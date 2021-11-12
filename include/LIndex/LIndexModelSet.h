@@ -1,7 +1,8 @@
 #pragma once
+
 #include <vector>
-#include "LIndex/LIndex_model.h"
-#include "LIndex/binseca.h"
+#include "LIndex/LIndexModel.h"
+#include "LIndex/Binseca.h"
 #include "LIndex/matplotlibcpp.h"
 
 namespace LIndex{
@@ -14,19 +15,34 @@ namespace LIndex{
 
         std::vector<key_t> keys;
         std::vector<uint64_t> positions;
-        
-        public:
+
+        key_t min_key;
+        key_t max_key;
+
         LModelSet(){};
+        LModelSet(const std::vector<key_t> &keys, const std::vector<uint64_t> &positions){
+            this->init(keys, positions);
+        };
         ~LModelSet(){
             // for(auto it=this->model_set.cbegin();it!=this->model_set.cend();it++){
             //     delete *it;
             // }
             this->model_set.clear();
         };
+
+        friend bool operator<(const LModelSet&a,const LModelSet&b){
+            return a.max_key<a.max_key;
+        }
+        friend bool operator<=(const LModelSet&a,const LModelSet&b){
+            return a.max_key<=a.max_key;
+        }
+
         void init(const std::vector<key_t> &keys, const std::vector<uint64_t> &positions){
             this->keys = keys;
             this->positions = positions;
             this->split_model(keys, positions, this->error);
+            this->min_key = this->model_set.get_min().min_key;
+            this->max_key = this->model_set.get_max().max_key;
             this->save_png(keys, positions);
 
         }
@@ -124,8 +140,7 @@ namespace LIndex{
         LModel<key_t> bsearch_model_left(const key_t &key){
             LModel<key_t> tmp;
             tmp.min_key = key;
-            LModel<key_t> m = this->model_set.bsearch_left(tmp);
-            return m;
+            return this->model_set.bsearch_left(tmp);
         }
 
         void save_png(const std::vector<key_t> &keys, const std::vector<uint64_t> &positions){

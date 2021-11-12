@@ -4,10 +4,11 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
-#include "LIndex/LIndex_model.h"
-#include "LIndex/LIndex_model_set.h"
-#include "LIndex/Lindex.h"
-#include "LIndex_model_impl.h"
+#include "LIndex/LIndexModel.h"
+#include "LIndex/LIndexModelSet.h"
+#include "LIndex/LIndex.h"
+#include "LIndex_model_impl.hpp"
+#include "LIndex/IntervalTree.h"
 
 #include "LIndex/matplotlibcpp.h"
 
@@ -163,7 +164,7 @@ void test_lindex(){
     std::vector<uint64_t> x(keys.size());
     std::vector<uint64_t> y(positions.size());
 
-    lindex.init(keys, positions);
+    lindex.load_set(keys, positions);
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<uint64_t> rand_keynumber(0, keys.size());
@@ -171,6 +172,85 @@ void test_lindex(){
         uint64_t p = rand_keynumber(gen);
         printf("Key [%ld] predict-position:[%ld] real-posiiton [%ld]\n", keys[p].data, lindex.get(keys[p]), (uint64_t)positions[p]);
     }
+}
+
+
+class interval{
+    public:
+        int low;
+        int high;
+
+        interval(){};
+        interval(int low, int high){
+            this->low=low;
+            this->high=high;
+        };
+        interval & operator=(const interval &inte){
+            this->low = inte.low;
+            this->high = inte.high;
+            return *this;
+        };
+};
+
+void test_interval_tree(){
+	interval A[]={interval(16,21), 
+                    interval(8,9), 
+                    interval(25,30), 
+                    interval(5,8),
+                    interval(15,23),
+                    interval(17,19), 
+                    interval(26,26),
+                    interval(0,3), 
+                    interval(6,10),
+                    interval(19,20)};
+
+	int n=sizeof(A)/sizeof(interval);
+	
+	std::cout<<"/*---------------------Create Interval Tree-------------------*/"<<std::endl;
+	LIndex::IntervalTree<interval> *T=new LIndex::IntervalTree<interval>();
+	T->root=T->NIL;
+	for(int i=0;i<n;i++)
+		T->IntervalT_Insert(T,A[i]);
+	std::cout<<"The interval tree is:"<<std::endl;
+	T->IntervalT_InorderWalk(T->root);
+	std::cout<<"The root of the tree is:"<<T->root->inte.low<<"   "<<T->root->inte.high<<std::endl;
+	std::cout<<"/*-------------------------------------------------------------*/"<<std::endl;
+ 
+	std::cout<<"/*--------------------Searching Interval Tree------------------*/"<<std::endl;
+	interval sInt;
+	std::cout<<"Please input the searching interval:";
+	std::cin>>sInt.low>>sInt.high;
+	LIndex::IntervalTNode<interval> *sITNode=T->NIL;
+	sITNode=T->IntervalT_Search(T,sInt);
+	if(sITNode==T->NIL)
+		std::cout<<"The searching interval doesn't exist in the tree."<<std::endl;
+	else{
+		std::cout<<"The overlap interval is:"<<std::endl;
+		std::cout<<"["<<sITNode->inte.low<<"  "<<sITNode->inte.high<<"]";
+		if(sITNode->color==0)
+			std::cout<<"   color:RED     ";
+		else
+			std::cout<<"   color:BLACK   ";
+		std::cout<<"Max:"<<sITNode->max<<std::endl;
+		}
+	std::cout<<"/*------------------Deleting INterval Tree--------------------*/"<<std::endl;
+	interval dInt;
+	std::cout<<"Please input the deleting interval:";
+	std::cin>>dInt.low>>dInt.high;
+	LIndex::IntervalTNode<interval>  *dITNode=T->NIL;
+	dITNode=T->IntervalT_Search(T,dInt);
+	if(dITNode==T->NIL)
+		std::cout<<"The deleting interval doesn't exist in the tree."<<std::endl;
+	else
+	{ 
+		T->IntervalT_Delete(T,dITNode);
+		std::cout<<"After deleting ,the interval tree is:"<<std::endl;
+		T->IntervalT_InorderWalk(T->root);
+		std::cout<<"The root of the tree is:"<<T->root->inte.low<<"   "<<T->root->inte.high<<std::endl;
+		}
+	std::cout<<"/*------------------------------------------------------------*/"<<std::endl;
+ 
+ 
 }
 
 int main(int, char**) {
@@ -187,6 +267,7 @@ int main(int, char**) {
     // std::cout<<res<<std::endl;
 
     // test_linear_model();
-    test_lindex();
+    // test_lindex();
+    test_interval_tree();
     return 0;
 }

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vector>
 
 namespace LIndex{
@@ -52,6 +54,21 @@ namespace LIndex{
         }
         arr_cit_t cend(){
             return this->arr.cend();
+        }
+
+        T get_min(){
+            if(this->arr.size()>0){
+                return this->arr[0];
+            }else{
+                return T();
+            }
+        }
+        T get_max(){
+            if(this->arr.size()>0){
+                return this->arr[this->arr.size()-1];
+            }else{
+                return T();
+            }
         }
     };
 }

@@ -3,7 +3,7 @@
 #include <iostream>
 #include <math.h>
 
-#include "LIndex/LIndex_model.h"
+#include "LIndex/LIndexModel.h"
 
 
 namespace LIndex{
