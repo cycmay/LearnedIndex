@@ -36,7 +36,9 @@ class Key{
     }
 
     friend bool operator<(const Key &l, const Key &r){return l.data<r.data;}
+    friend bool operator>(const Key &l, const Key &r){return l.data>r.data;}
     friend bool operator<=(const Key &l, const Key &r){return l.data<=r.data;}
+    friend bool operator>=(const Key &l, const Key &r){return l.data>=r.data;}
 };
 
 size_t Keys_number = 1000;
@@ -164,14 +166,40 @@ void test_lindex(){
     std::vector<uint64_t> x(keys.size());
     std::vector<uint64_t> y(positions.size());
 
-    lindex.load_set(keys, positions);
+    std::vector<Key> _keys;
+    std::vector<uint64_t> _positions(keys.size());
+    size_t pageNumber;
+    size_t pageSize = 200;
+    pageNumber = keys.size()/pageSize;
+    for(size_t i=0;i<pageNumber;i++){
+        _keys.clear();
+        _positions.clear();
+        _keys = std::vector<Key>(keys.cbegin()+i*pageSize, keys.cbegin()+(i+1)*pageSize);
+        _positions = std::vector<uint64_t>(positions.cbegin()+i*pageSize, positions.cbegin()+(i+1)*pageSize);
+        lindex.load_set(_keys, _positions);
+    }
+
+    lindex.inorderWalkThreading();
+
+    namespace plt=matplotlibcpp;
+
+     // save figure
+    const char* filename = "./basic.png";
+    std::cout << "Saving result to " << filename << std::endl;;
+    plt::save(filename);
+    
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<uint64_t> rand_keynumber(0, keys.size());
+
     for(size_t i=0;i<10;i++){
         uint64_t p = rand_keynumber(gen);
         printf("Key [%ld] predict-position:[%ld] real-posiiton [%ld]\n", keys[p].data, lindex.get(keys[p]), (uint64_t)positions[p]);
     }
+
+    uint64_t p = rand_keynumber(gen);
+    printf("range query: [%ld, %ld], result: \n", keys[p].data, keys[p+1000].data);
+    lindex.rangeQuery(keys[p], keys[p+1000]);
 }
 
 
@@ -210,7 +238,7 @@ void test_interval_tree(){
 	LIndex::IntervalTree<interval> *T=new LIndex::IntervalTree<interval>();
 	T->root=T->NIL;
 	for(int i=0;i<n;i++)
-		T->IntervalT_Insert(T,A[i]);
+		T->IntervalT_Insert(A[i]);
 	std::cout<<"The interval tree is:"<<std::endl;
 	T->IntervalT_InorderWalk(T->root);
 	std::cout<<"The root of the tree is:"<<T->root->inte.low<<"   "<<T->root->inte.high<<std::endl;
@@ -221,7 +249,7 @@ void test_interval_tree(){
 	std::cout<<"Please input the searching interval:";
 	std::cin>>sInt.low>>sInt.high;
 	LIndex::IntervalTNode<interval> *sITNode=T->NIL;
-	sITNode=T->IntervalT_Search(T,sInt);
+	sITNode=T->IntervalT_Search(sInt);
 	if(sITNode==T->NIL)
 		std::cout<<"The searching interval doesn't exist in the tree."<<std::endl;
 	else{
@@ -238,12 +266,12 @@ void test_interval_tree(){
 	std::cout<<"Please input the deleting interval:";
 	std::cin>>dInt.low>>dInt.high;
 	LIndex::IntervalTNode<interval>  *dITNode=T->NIL;
-	dITNode=T->IntervalT_Search(T,dInt);
+	dITNode=T->IntervalT_Search(dInt);
 	if(dITNode==T->NIL)
 		std::cout<<"The deleting interval doesn't exist in the tree."<<std::endl;
 	else
 	{ 
-		T->IntervalT_Delete(T,dITNode);
+		T->IntervalT_Delete(dITNode);
 		std::cout<<"After deleting ,the interval tree is:"<<std::endl;
 		T->IntervalT_InorderWalk(T->root);
 		std::cout<<"The root of the tree is:"<<T->root->inte.low<<"   "<<T->root->inte.high<<std::endl;
@@ -267,7 +295,8 @@ int main(int, char**) {
     // std::cout<<res<<std::endl;
 
     // test_linear_model();
-    // test_lindex();
-    test_interval_tree();
+    test_lindex();
+    // test_interval_tree();
+
     return 0;
 }

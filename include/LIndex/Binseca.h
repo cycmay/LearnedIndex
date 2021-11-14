@@ -18,7 +18,7 @@ namespace LIndex{
 
         public:
         T bsearch_left(const T &e){
-            uint64_t low=0, high=this->arr.size();
+            uint64_t low=0, high=this->arr.size()-1;
             while(low<high){
                 uint64_t mid = (high-low)/2+low;
                 if(this->arr[mid]<e){

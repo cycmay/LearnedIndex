@@ -7,6 +7,23 @@
 namespace LIndex{
     using namespace std;
 
+    class Interval{
+        public:
+            int low;
+            int high;
+
+            Interval(){};
+            Interval(int low, int high){
+                this->low=low;
+                this->high=high;
+            };
+            Interval & operator=(const Interval &inte){
+                this->low = inte.low;
+                this->high = inte.high;
+                return *this;
+            };
+    };
+
     enum RBTColor{RED, BLACK};
 
     // typedef struct interval{
@@ -22,6 +39,11 @@ namespace LIndex{
             IntervalTNode<TC> *parent;
             IntervalTNode<TC> *left;
             IntervalTNode<TC> *right;
+
+            bool left_flag = false; // false: left-child 
+                                    // true: previous-pointer
+            bool right_flag = false; // false: right-child
+                                    // true: successor-pointer
 
             typedef TC interval;
         
@@ -44,14 +66,19 @@ namespace LIndex{
     class IntervalTree{
         private:
             typedef TC interval;
+            IntervalTNode<TC> * prev;
+            interval interval0;
             
         public:
             //init sentine NIL
-            interval interval0;
             IntervalTNode<TC> *NIL=nullptr;
+            IntervalTNode<TC> * root;
+
             IntervalTree(){
                 this->interval0 = interval();
-                this->NIL = new IntervalTNode<TC>(-1,BLACK,nullptr,nullptr,nullptr,interval0,-1);       
+                this->NIL = new IntervalTNode<TC>(-1,BLACK,nullptr,nullptr,nullptr,interval0,-1);
+                this->prev = this->NIL;     
+
             }
         private:
             /*-----------------------------------------------------------------------*/
@@ -61,45 +88,96 @@ namespace LIndex{
                     return a>c ? a:c;
                 else
                     return b>c ? b:c;
+            }
+            
+            void inorderWalkThreadingRecursive(IntervalTNode<TC> *x){
+                if(x==NIL){
+                    return;
                 }
-            bool Overlap(interval &a,interval &b)
+
+                inorderWalkThreadingRecursive(x->left);
+                
+                if (x->left == NIL) {
+                    x->left_flag = true;
+                    x->left = prev;
+                }
+                if (prev != NIL && prev->right == NIL) {
+                    prev->right_flag = true;
+                    prev->right = x;
+                }
+                prev = x;
+        
+                inorderWalkThreadingRecursive(x->right);
+            }
+
+        public:
+            static bool Overlap(interval &a,interval &b)
             {
                 if(a.high < b.low || a.low > b.high)     // a & b do not overlap
                     return 0;
                 return 1;
-                }
-        public:
-            IntervalTNode<TC> * root;
-            IntervalTNode<TC> *IntervalT_Search(IntervalTree *T,interval &i)
+            }
+            
+            IntervalTNode<TC> *IntervalT_Search(interval &i)
             {
-                IntervalTNode<TC> *x=T->root;
+                IntervalTNode<TC> *x=this->root;
+                IntervalTNode<TC> *res = NIL;
                 while(x!=NIL && !Overlap(i,x->inte))
                 { 
                     if(x->left !=NIL && x->left->max>= i.low)
                         x=x->left;
                     else
                         x=x->right;
+                }
+                while(x!=NIL && Overlap(i, x->inte)){
+                    res = x;
+                    x = x->left;
+                }
+                return res;
+            }
+
+            std::vector<IntervalTNode<TC> *> IntervalT_Search_All(interval &i)
+            {
+                std::vector<IntervalTNode<TC> *> res;
+                IntervalTNode<TC> *x=this->IntervalT_Search(i);
+                if(x==NIL){
+                    return res;
+                }
+                
+                while(x!=NIL && Overlap(i, x->inte)){
+                    res.push_back(x);
+                    IntervalTNode<TC> * nextNode;
+                    if(x->right_flag && x->right!=NIL){
+                        nextNode = x->right;
+                    }else{
+                        for(nextNode=x->right;!nextNode->left_flag; nextNode=nextNode->left)
+                        ;
                     }
-                return x;
+                    x = nextNode;
+                }
+                return res;
             }
             /*-----------------------------------------------------------------------*/
-            
+
+            void inorderWalkThreading(){
+                this->inorderWalkThreadingRecursive(this->root);
+            }
             
             void IntervalT_InorderWalk(IntervalTNode<TC> *x)
             {
-                if(x!=NIL)
-                {  
-                    IntervalT_InorderWalk(x->left);
-                    cout<<"["<<setw(3)<<x->inte.low<<setw(3)<<x->inte.high<<"  ]";
-                    if(x->color==1)
-                        cout<<"     Red       "<<x->max<<endl;
-                    else
-                        cout<<"     Black     "<<x->max<<endl;
-            
-                    IntervalT_InorderWalk(x->right);
-                    } 
-            
+                if(x==NIL){
+                    return;
                 }
+
+                IntervalT_InorderWalk(x->left);
+                cout<<"["<<setw(3)<<x->inte.low<<setw(3)<<x->inte.high<<"  ]";
+                if(x->color==1)
+                    cout<<"     Red       "<<x->max<<endl;
+                else
+                    cout<<"     Black     "<<x->max<<endl;
+                IntervalT_InorderWalk(x->right);
+            
+            }
             
             IntervalTNode<TC> *IntervalT_Minimum(IntervalTNode<TC> *x)
             {
@@ -120,7 +198,7 @@ namespace LIndex{
                 return y;
                 }
             
-            void Left_Rotate(IntervalTree *T,IntervalTNode<TC> *x)
+            void Left_Rotate(IntervalTNode<TC> *x)
             {
                 IntervalTNode<TC> *y=x->right;    //set y
             
@@ -130,7 +208,7 @@ namespace LIndex{
             
                 y->parent=x->parent;     //link x's parent to y;
                 if(x->parent == NIL)
-                    T->root=y;
+                    this->root=y;
                 else if(x==x->parent->left)
                     x->parent->left=y;
                 else
@@ -144,7 +222,7 @@ namespace LIndex{
                 x->max=Max(x->inte.high,x->left->max,x->right->max);
                 }
             
-            void Right_Rotate(IntervalTree *T,IntervalTNode<TC> *x)
+            void Right_Rotate(IntervalTNode<TC> *x)
             {
                 IntervalTNode<TC> *y=x->left;      //set y
                 
@@ -154,7 +232,7 @@ namespace LIndex{
                 
                 y->parent=x->parent;    //link x's parent to y
                 if(x->parent == NIL)
-                    T->root=y;
+                    this->root=y;
                 else if(x == x->parent->left)
                     x->parent->left=y;
                 else
@@ -169,7 +247,7 @@ namespace LIndex{
             
                 }
             
-            void IntervalT_InsertFixup(IntervalTree *T,IntervalTNode<TC> *z)
+            void IntervalT_InsertFixup(IntervalTNode<TC> *z)
             {
                 while(z->parent->color==RED)
                 {
@@ -188,11 +266,11 @@ namespace LIndex{
                             if(z==z->parent->right)
                             { 
                                 z=z->parent;                    //case 2
-                                Left_Rotate(T,z);               //case 2
+                                Left_Rotate(z);               //case 2
                                 }
                             z->parent->color=BLACK;             //case 3
                             z->parent->parent->color=RED;       //case 3
-                            Right_Rotate(T,z->parent->parent);  //case 3
+                            Right_Rotate(z->parent->parent);  //case 3
                             } 
                         }
                     else
@@ -210,18 +288,18 @@ namespace LIndex{
                             if(z==z->parent->left)
                             {
                                 z=z->parent;
-                                Right_Rotate(T,z);
+                                Right_Rotate(z);
                                 }
                             z->parent->color=BLACK;
                             z->parent->parent->color=RED;
-                            Left_Rotate(T,z->parent->parent);
+                            Left_Rotate(z->parent->parent);
                             } 
                         } 
                     }   
-                T->root->color=BLACK;      //turn the root to BLACK
+                this->root->color=BLACK;      //turn the root to BLACK
                 }
             
-            void IntervalT_Insert(IntervalTree *T,interval inte)
+            void IntervalT_Insert(interval inte)
             {
                 IntervalTNode<TC> *z=new IntervalTNode<TC>();
                 z->key=inte.low;
@@ -233,7 +311,7 @@ namespace LIndex{
                 z->right=NIL;
             
                 IntervalTNode<TC> *y=NIL;        //y is the parent of x
-                IntervalTNode<TC> *x=T->root;
+                IntervalTNode<TC> *x=this->root;
                 while(x != NIL)
                 { 
                     x->max=max(x->max,z->max);     //Maintaining the max value of each node from z up to root
@@ -245,18 +323,18 @@ namespace LIndex{
                     }   
                 z->parent=y;   //link new node's parent node to y(y's child is NIL)
                 if(y==NIL)
-                    T->root=z;
+                    this->root=z;
                 else if(z->key < y->key)
                     y->left=z;
                 else
                     y->right =z;
-                IntervalT_InsertFixup(T,z);
+                IntervalT_InsertFixup(z);
                 }
             
-            void IntervalT_DeleteFixup(IntervalTree *T,IntervalTNode<TC> *x)
+            void IntervalT_DeleteFixup(IntervalTNode<TC> *x)
             {
                 IntervalTNode<TC> *w;
-                while(x!=T->root && x->color==BLACK)
+                while(x!=this->root && x->color==BLACK)
                 {
                     if(x==x->parent->left)
                     {
@@ -265,7 +343,7 @@ namespace LIndex{
                         {
                             w->color=BLACK;
                             x->parent->color=RED;
-                            Left_Rotate(T,x->parent);
+                            Left_Rotate(x->parent);
                             w=x->parent->right;
                             }
                         if(w->left->color==BLACK && w->right->color==BLACK)  
@@ -279,14 +357,14 @@ namespace LIndex{
                             {//case 3:x's sibling w is black,w's left child is red, and w's right child is black
                                 w->left->color=BLACK;
                                 w->color=RED;
-                                Right_Rotate(T,w);
+                                Right_Rotate(w);
                                 w=x->parent->right;
                                 }
                             w->color=x->parent->color;      //case 4: x's sibling w is black,and w's right child is red
                             x->parent->color=BLACK;         //.
                             w->right->color=BLACK;         // .
-                            Left_Rotate(T,x->parent);      // .
-                            x=T->root;                     //case 4
+                            Left_Rotate(x->parent);      // .
+                            x=this->root;                     //case 4
                             }
                         }
                     else
@@ -296,7 +374,7 @@ namespace LIndex{
                         {
                             w->color=BLACK;
                             x->parent->color=RED;
-                            Right_Rotate(T,x->parent);
+                            Right_Rotate(x->parent);
                             w=x->parent->left;
                             } 
                         if(w->left->color==BLACK && w->right->color==BLACK)
@@ -310,20 +388,20 @@ namespace LIndex{
                             {
                                 w->right->color=BLACK;
                                 w->color=RED;
-                                Left_Rotate(T,w);
+                                Left_Rotate(w);
                                 w=x->parent->left;
                                 }
                             w->color=x->parent->color;
                             x->parent->color=BLACK;
                             w->left->color=BLACK;
-                            Right_Rotate(T,x->parent);
-                            x=T->root;
+                            Right_Rotate(x->parent);
+                            x=this->root;
                             } 
                         }
                     }
                 x->color=BLACK;
                 }
-            void IntervalT_Delete(IntervalTree *T,IntervalTNode<TC> *z)
+            void IntervalT_Delete(IntervalTNode<TC> *z)
             {
                 IntervalTNode<TC> *x=nullptr,*y=nullptr,*g=nullptr;
                 
@@ -349,7 +427,7 @@ namespace LIndex{
                 x->parent=y->parent;
             
                 if(y->parent==NIL)
-                    T->root=x;
+                    this->root=x;
                 else if(y==y->parent->left)
                     y->parent->left=x;
                 else
@@ -359,7 +437,7 @@ namespace LIndex{
                     z->key=y->key;
             
                 if(y->color==BLACK)
-                    IntervalT_DeleteFixup(T,x);
+                    IntervalT_DeleteFixup(x);
                 }
     
     

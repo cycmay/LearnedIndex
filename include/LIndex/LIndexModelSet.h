@@ -3,11 +3,12 @@
 #include <vector>
 #include "LIndex/LIndexModel.h"
 #include "LIndex/Binseca.h"
+#include "LIndex/IntervalTree.h"
 #include "LIndex/matplotlibcpp.h"
 
 namespace LIndex{
     template<class key_t>
-    class LModelSet{
+    class LModelSet : public Interval{
         public:
         typedef typename std::vector<key_t>::iterator vector_iterator_t;
         typedef typename std::vector<key_t>::const_iterator vector_const_iterator_t; 
@@ -42,13 +43,15 @@ namespace LIndex{
             this->positions = positions;
             this->split_model(keys, positions, this->error);
             this->min_key = this->model_set.get_min().min_key;
+            this->low = (int)this->min_key.data;
             this->max_key = this->model_set.get_max().max_key;
+            this->high = (int)this->max_key.data;
             this->save_png(keys, positions);
 
         }
 
         private:
-        double error = 50.0;
+        double error = 500.0;
         double improvement_spliting_here(uint64_t keys_begin, 
                                         uint64_t keys_end,
                                         uint64_t pos_begin,
@@ -152,17 +155,19 @@ namespace LIndex{
                 x.at(i)=keys[i].data;
                 y.at(i)=positions[i];
             }
+
             namespace plt=matplotlibcpp;
+            
             plt::plot(x,y);
             // Enable legend.
-            plt::legend();
+            // plt::legend();
 
 
         
             for(auto it=this->model_set.cbegin(); it!=this->model_set.cend(); it++){
-                printf("min_key: %ld, max_key %ld\n", (*it).min_key.data, (*it).max_key.data);
-                printf("weight: [%.3f, %.3f]\n", (*it).weights[0], (*it).weights[1]);
-                printf("loss: %.3f\n", (*it).loss);
+                // printf("min_key: %ld, max_key %ld\n", (*it).min_key.data, (*it).max_key.data);
+                // printf("weight: [%.3f, %.3f]\n", (*it).weights[0], (*it).weights[1]);
+                // printf("loss: %.3f\n", (*it).loss);
 
                 std::vector<uint64_t> x;
                 std::vector<uint64_t> y;
@@ -172,10 +177,7 @@ namespace LIndex{
                 }
                 plt::plot(x,y);
             }
-             // save figure
-            const char* filename = "./basic.png";
-            std::cout << "Saving result to " << filename << std::endl;;
-            plt::save(filename);
+            
 
         }
         
